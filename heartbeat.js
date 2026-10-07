@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ erro: 'method not allowed' });
   }
 
-  const { maquina_id, token, url_atual } = req.body || {};
+  const { maquina_id, token, url_atual, comando_id } = req.body || {};
 
   const maquina = await validarMaquina(
     supabaseAdmin,
@@ -30,10 +30,24 @@ module.exports = async (req, res) => {
 
   if (error) {
     console.error(error);
-
     return res.status(500).json({
       erro: 'falha ao gravar heartbeat'
     });
+  }
+
+  if (comando_id) {
+    const { error: comandoError } = await supabaseAdmin
+      .from('comandos')
+      .update({ executado: true })
+      .eq('id', comando_id)
+      .eq('maquina_id', maquina.id);
+
+    if (comandoError) {
+      console.error('[InfraHub] falha ao confirmar comando:', comandoError);
+      return res.status(500).json({
+        erro: 'heartbeat gravado, mas falha ao confirmar comando'
+      });
+    }
   }
 
   return res.status(200).json({
