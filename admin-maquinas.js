@@ -15,14 +15,30 @@ module.exports = async (req, res) => {
 
     if (!id) return res.status(400).json({ erro: 'id é obrigatório' });
 
-    const { error } = await supabaseAdmin
+    const { error: comandosError } = await supabaseAdmin
+      .from('comandos')
+      .delete()
+      .eq('maquina_id', id);
+
+    if (comandosError) {
+      console.error(comandosError);
+      return res.status(500).json({ erro: 'falha ao excluir comandos da máquina' });
+    }
+
+    const { data: maquina, error: maquinaError } = await supabaseAdmin
       .from('maquinas_tv')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
 
-    if (error) {
-      console.error(error);
+    if (maquinaError) {
+      console.error(maquinaError);
       return res.status(500).json({ erro: 'falha ao excluir máquina' });
+    }
+
+    if (!maquina) {
+      return res.status(404).json({ erro: 'máquina não encontrada' });
     }
 
     return res.status(200).json({ ok: true, maquina_id: id });
