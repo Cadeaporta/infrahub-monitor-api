@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const { data, error } = await supabaseAdmin
       .from('maquinas_tv')
-      .select('id, nome, unidade, url_esperada, url_atual, ultimo_heartbeat')
+      .select('id, nome, url_esperada, url_atual, ultimo_heartbeat')
       .order('nome', { ascending: true });
 
     if (error) {
@@ -61,21 +61,8 @@ module.exports = async (req, res) => {
   const body = req.body || {};
   const id = String(body.id || '').trim();
   const urlEsperada = String(body.url_esperada || '').trim();
-  const unidade = String(body.unidade || '').trim();
-
-  if (!id) {
+    if (!id) {
     return res.status(400).json({ erro: 'id é obrigatório' });
-  }
-
-  if (unidade && ![
-    'Nova Campinas',
-    'Guanabara',
-    'Casa de Saude',
-    'HVC',
-    'Hospital Care',
-    'Indaiatuba'
-  ].includes(unidade)) {
-    return res.status(400).json({ erro: 'unidade inválida' });
   }
 
   if (urlEsperada) {
@@ -94,7 +81,6 @@ module.exports = async (req, res) => {
   }
 
   const updates = {};
-  if (unidade) updates.unidade = unidade;
   if (urlEsperada) updates.url_esperada = urlEsperada;
 
   if (!Object.keys(updates).length) {
@@ -107,7 +93,7 @@ module.exports = async (req, res) => {
     .from('maquinas_tv')
     .update(updates)
     .eq('id', id)
-    .select('id, nome, unidade, url_esperada, url_atual, ultimo_heartbeat')
+    .select('id, nome, url_esperada, url_atual, ultimo_heartbeat')
     .maybeSingle();
 
   if (error) {
