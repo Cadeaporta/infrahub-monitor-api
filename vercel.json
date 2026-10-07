@@ -1,0 +1,33 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "version": 2,
+  "builds": [
+    {
+      "src": "*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/heartbeat",
+      "dest": "/heartbeat.js"
+    },
+    {
+      "src": "/api/comandos",
+      "dest": "/comandos.js"
+    },
+    {
+      "src": "/api/cadastrar-maquina",
+      "dest": "/cadastrar-maquina.js"
+    },
+    {
+      "src": "/api/admin/maquinas",
+      "dest": "/admin-maquinas.js"
+    },
+    {
+      "src": "/api/admin/comandos",
+      "dest": "/admin-comandos.js"
+    }
+  ]
+}
