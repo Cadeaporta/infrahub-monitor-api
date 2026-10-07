@@ -1,5 +1,5 @@
-const { supabaseAdmin } = require('../lib/supabaseAdmin');
-const { validarMaquina } = require('../lib/auth');
+const { supabaseAdmin } = require('./supabaseAdmin');
+const { validarMaquina } = require('./auth');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
@@ -43,23 +43,5 @@ module.exports = async (req, res) => {
     };
   });
 
-  // Mantém o comportamento atual: o comando é consumido ao ser entregue
-  // à extensão. A extensão registra no console quando recebe e executa.
-  if (comandos.length > 0) {
-    const ids = comandos.map((c) => c.id);
-
-    const { error: updateError } = await supabaseAdmin
-      .from('comandos')
-      .update({ executado: true })
-      .in('id', ids);
-
-    if (updateError) {
-      console.error('[InfraHub] falha ao marcar comandos:', updateError);
-      return res.status(500).json({ erro: 'falha ao atualizar comandos' });
-    }
-  }
-
-  return res.status(200).json({
-    comandos
-  });
+  return res.status(200).json({ comandos });
 };
