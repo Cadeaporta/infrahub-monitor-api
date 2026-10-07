@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const { data, error } = await supabaseAdmin
       .from('maquinas_tv')
-      .select('id, nome, url_esperada, url_atual, ultimo_heartbeat')
+      .select('id, nome, unidade, url_esperada, url_atual, ultimo_heartbeat')
       .order('nome', { ascending: true });
 
     if (error) {
@@ -26,39 +26,59 @@ module.exports = async (req, res) => {
   const body = req.body || {};
   const id = String(body.id || '').trim();
   const urlEsperada = String(body.url_esperada || '').trim();
+  const unidade = String(body.unidade || '').trim();
 
-  if (!id || !urlEsperada) {
-    return res.status(400).json({
-      erro: 'id e url_esperada são obrigatórios'
-    });
+  if (!id) {
+    return res.status(400).json({ erro: 'id é obrigatório' });
   }
 
-  let parsedUrl;
-  try {
-    parsedUrl = new URL(urlEsperada);
-  } catch {
-    return res.status(400).json({
-      erro: 'url_esperada inválida'
-    });
+  if (unidade && ![
+    'Nova Campinas',
+    'Guanabara',
+    'Casa de Saude',
+    'HVC',
+    'Hospital Care',
+    'Indaiatuba'
+  ].includes(unidade)) {
+    return res.status(400).json({ erro: 'unidade inválida' });
   }
 
-  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+  if (urlEsperada) {
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(urlEsperada);
+    } catch {
+      return res.status(400).json({ erro: 'url_esperada inválida' });
+    }
+
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      return res.status(400).json({
+        erro: 'url_esperada deve usar http ou https'
+      });
+    }
+  }
+
+  const updates = {};
+  if (unidade) updates.unidade = unidade;
+  if (urlEsperada) updates.url_esperada = urlEsperada;
+
+  if (!Object.keys(updates).length) {
     return res.status(400).json({
-      erro: 'url_esperada deve usar http ou https'
+      erro: 'informe pelo menos um campo para atualizar'
     });
   }
 
   const { data, error } = await supabaseAdmin
     .from('maquinas_tv')
-    .update({ url_esperada: urlEsperada })
+    .update(updates)
     .eq('id', id)
-    .select('id, nome, url_esperada, url_atual, ultimo_heartbeat')
+    .select('id, nome, unidade, url_esperada, url_atual, ultimo_heartbeat')
     .maybeSingle();
 
   if (error) {
     console.error(error);
     return res.status(500).json({
-      erro: 'falha ao atualizar URL esperada'
+      erro: 'falha ao atualizar máquina'
     });
   }
 
