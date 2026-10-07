@@ -1,12 +1,31 @@
 const { supabaseAdmin } = require('./supabaseAdmin');
 
 module.exports = async (req, res) => {
-  if (!['GET', 'PUT'].includes(req.method)) {
+  if (!['GET', 'PUT', 'DELETE'].includes(req.method)) {
     return res.status(405).json({ erro: 'method not allowed' });
   }
 
   if (req.headers['x-admin-secret'] !== process.env.ADMIN_SECRET) {
     return res.status(401).json({ erro: 'não autorizado' });
+  }
+
+  if (req.method === 'DELETE') {
+    const body = req.body || {};
+    const id = String(body.id || '').trim();
+
+    if (!id) return res.status(400).json({ erro: 'id é obrigatório' });
+
+    const { error } = await supabaseAdmin
+      .from('maquinas_tv')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ erro: 'falha ao excluir máquina' });
+    }
+
+    return res.status(200).json({ ok: true, maquina_id: id });
   }
 
   if (req.method === 'GET') {
