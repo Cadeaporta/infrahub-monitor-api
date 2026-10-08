@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const { data, error } = await supabaseAdmin
       .from('maquinas_tv')
-      .select('id, nome, url_esperada, url_atual, ultimo_heartbeat')
+      .select('id, nome, url_esperada, url_atual, ultimo_heartbeat, unidade')
       .order('nome', { ascending: true });
 
     if (error) {
@@ -61,6 +61,7 @@ module.exports = async (req, res) => {
   const body = req.body || {};
   const id = String(body.id || '').trim();
   const urlEsperada = String(body.url_esperada || '').trim();
+  const unidade = String(body.unidade || '').trim();
     if (!id) {
     return res.status(400).json({ erro: 'id é obrigatório' });
   }
@@ -82,6 +83,7 @@ module.exports = async (req, res) => {
 
   const updates = {};
   if (urlEsperada) updates.url_esperada = urlEsperada;
+  if (Object.prototype.hasOwnProperty.call(body, 'unidade')) updates.unidade = unidade || null;
 
   if (!Object.keys(updates).length) {
     return res.status(400).json({
