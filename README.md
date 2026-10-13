@@ -1,40 +1,44 @@
 # infrahub-monitor-api
 
-API intermediária entre a extensão (nas TVs) e o Supabase. A extensão nunca
-fala direto com o banco — só com estas rotas.
+API intermediária entre a extensão das TVs e o Supabase. A extensão nunca acessa o banco diretamente. A chave SUPABASE_SERVICE_ROLE_KEY existe apenas no servidor.
 
-## Deploy
+## Variáveis da Vercel
 
-1. `vercel --prod` dentro desta pasta (novo projeto, separado do InfraHub).
-2. No painel da Vercel, em **Settings → Environment Variables**, adicione:
-   - `SUPABASE_URL` — URL do projeto `infrahub` no Supabase.
-   - `SUPABASE_SERVICE_ROLE_KEY` — pegue em Supabase → Project Settings →
-     API → `service_role` (secret). **Nunca** coloque essa key em código ou
-     na extensão.
-   - `ADMIN_SECRET` — qualquer string longa e aleatória, só sua.
-3. Redeploy pra aplicar as variáveis.
+- SUPABASE_URL: URL do projeto Supabase.
+- SUPABASE_SERVICE_ROLE_KEY: chave secreta do Supabase. Nunca colocar no navegador ou na extensão.
+- ADMIN_SECRET: segredo administrativo longo e aleatório, usado apenas pelas rotas servidor-servidor.
+- TV_ENROLLMENT_SECRET: segredo de cadastro usado pelo helper local instalado via Atera. Não embutir na extensão.
 
-## Cadastrar uma TV (uma vez por máquina)
-
-```bash
-curl -X POST https://SEU-DOMINIO.vercel.app/api/admin/cadastrar-maquina \
-  -H "x-admin-secret: SEU_ADMIN_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{"id":"tv-recepcao","nome":"TV Recepção","url_esperada":"https://infrahub-tv-plantao-5.vercel.app"}'
-```
-
-A resposta traz um `token` — copie, ele só aparece uma vez. É o valor que
-vai no `chrome.storage.local` da extensão dessa TV específica.
+As rotas de lifecycle dependem da migration supabase/migrations/202610130001_tv_lifecycle_foundation.sql. Revise e aplique primeiro em ambiente de teste; esta PR não aplica SQL nem faz deploy.
 
 ## Rotas
 
-- `POST /api/heartbeat` — body `{ maquina_id, token, url_atual }`. A
-  extensão chama a cada ~30s.
-- `GET /api/comandos?maquina_id=X&token=Y` — retorna comandos pendentes
-  (ex.: `reload`) e já marca como executados.
+### Dispositivo
+- POST /api/tv/registrar: cadastro pendente. Exige x-enrollment-secret, machine_uuid e hostname. O token retornado deve ser guardado localmente pelo helper/instalador.
+- POST /api/heartbeat: heartbeat autenticado; atualiza URL atual e última atividade.
+- GET /api/comandos?maquina_id=X&token=Y: entrega comandos e marca recebimento.
+- POST /api/tv/comando-status: atualiza status do comando para executando, concluido ou falhou.
+- POST /api/tv/eventos: recebe lotes de até 50 eventos diagnósticos.
+- GET /api/tv/config?maquina_id=X&token=Y: lê configuração e perfil atribuídos à TV aprovada.
 
-## Por que assim
+### Painel
+- GET /api/admin/maquinas: lista TVs ativas e seus últimos status de comando.
+- PUT /api/admin/maquinas: atualiza nome, URL esperada, configuração e perfil.
+- DELETE /api/admin/maquinas: revoga a TV e faz soft delete; comandos e eventos são preservados.
+- POST /api/admin/aprovar-maquina: aprova ou revoga uma TV.
+- POST /api/admin/comandos: cria comando com prazo de 120 segundos.
 
-Cada TV carrega só o próprio token. Se vazar, dá pra forjar heartbeat ou
-receber comando só daquela máquina — nunca escrever direto no banco nem
-mexer nas outras TVs. A `service_role key` nunca sai do servidor.
+Todas as rotas /api/admin/* exigem x-admin-secret e devem ser chamadas pelo backend autenticado do painel, nunca diretamente do navegador.
+
+## Ciclo de vida
+
+Novos dispositivos entram como pendente. O heartbeat, a consulta de comandos, os eventos e a configuração só são aceitos depois da aprovação. TVs antigas são marcadas como aprovadas pela migration para evitar interrupção imediata.
+
+Comandos sem confirmação expiram após 120 segundos e são marcados como falhos. A limpeza de eventos com mais de 14 dias deve ser configurada em etapa posterior, após validar a retenção e os backups.
+
+## Segurança e rollout
+
+- Uma extensão Chrome/Edge não consegue consultar o hostname do Windows de forma confiável. Use um helper local gerenciado pelo Atera; mantenha o segredo de cadastro fora da extensão.
+- O status mirror maquinas_tv_status tem uma política pública existente. Não a remova até verificar que a página pública Plantão lê o status por uma rota de servidor, porque Plantão deve continuar sem login.
+- Faça primeiro a migration em teste, depois deploy de API e extensão compatíveis, valide um piloto e só então libere em lotes.
+- Esta branch é uma proposta em draft. Não foi publicada em produção.
