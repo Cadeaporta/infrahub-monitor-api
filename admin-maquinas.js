@@ -47,7 +47,34 @@ module.exports = async (req, res) => {
       console.error('[InfraHub] falha ao buscar máquinas:', error);
       return res.status(500).json({ erro: 'falha ao buscar máquinas' });
     }
-    return res.status(200).json({ maquinas: data || [] });
+
+    const maquinas = data || [];
+    const ids = maquinas.map((item) => item.id);
+    if (!ids.length) return res.status(200).json({ maquinas: [] });
+
+    const { data: comandos, error: comandosError } = await supabaseAdmin
+      .from('comandos')
+      .select('id, maquina_id, tipo, status, erro, created_at, recebido_em, iniciado_em, concluido_em, falhou_em, prazo_em')
+      .in('maquina_id', ids)
+      .order('created_at', { ascending: false })
+      .limit(300);
+
+    if (comandosError) {
+      console.error('[InfraHub] falha ao buscar status dos comandos:', comandosError);
+      return res.status(500).json({ erro: 'falha ao buscar status dos comandos' });
+    }
+
+    const ultimoPorMaquina = new Map();
+    for (const comando of comandos || []) {
+      if (!ultimoPorMaquina.has(comando.maquina_id)) ultimoPorMaquina.set(comando.maquina_id, comando);
+    }
+
+    return res.status(200).json({
+      maquinas: maquinas.map((item) => ({
+        ...item,
+        ultimo_comando: ultimoPorMaquina.get(item.id) || null
+      }))
+    });
   }
 
   const body = req.body || {};
