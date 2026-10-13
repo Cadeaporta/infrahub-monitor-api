@@ -29,6 +29,7 @@ module.exports = async (req, res) => {
     if (detalhesTexto.length > 8000) detalhes = { truncado: true, resumo: detalhesTexto.slice(0, 7900) };
     rows.push({
       maquina_id: maquina.id,
+      event_id: typeof item.event_id === 'string' ? item.event_id.slice(0, 100) : null,
       machine_uuid: maquina.machine_uuid || null,
       hostname: maquina.hostname || null,
       tipo,
@@ -41,7 +42,9 @@ module.exports = async (req, res) => {
   }
 
   if (!rows.length) return res.status(400).json({ erro: 'nenhum evento válido' });
-  const { error } = await supabaseAdmin.from('tv_eventos').insert(rows);
+  const { error } = await supabaseAdmin
+    .from('tv_eventos')
+    .upsert(rows, { onConflict: 'maquina_id,event_id', ignoreDuplicates: true });
   if (error) {
     console.error('[InfraHub] falha ao gravar eventos:', error);
     return res.status(500).json({ erro: 'falha ao gravar eventos' });
