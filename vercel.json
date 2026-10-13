@@ -56,6 +56,10 @@
     {
       "src": "/api/cron/limpar-eventos-tv",
       "dest": "/limpar-eventos-tv.js"
+    },
+    {
+      "src": "/api/admin/codigos-cadastro",
+      "dest": "/admin-codigos-cadastro.js"
     }
   ],
   "crons": [
