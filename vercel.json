@@ -9,25 +9,15 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/heartbeat",
-      "dest": "/heartbeat.js"
-    },
-    {
-      "src": "/api/comandos",
-      "dest": "/comandos.js"
-    },
-    {
-      "src": "/api/cadastrar-maquina",
-      "dest": "/cadastrar-maquina.js"
-    },
-    {
-      "src": "/api/admin/maquinas",
-      "dest": "/admin-maquinas.js"
-    },
-    {
-      "src": "/api/admin/comandos",
-      "dest": "/admin-comandos.js"
-    }
+    { "src": "/api/heartbeat", "dest": "/heartbeat.js" },
+    { "src": "/api/comandos", "dest": "/comandos.js" },
+    { "src": "/api/cadastrar-maquina", "dest": "/cadastrar-maquina.js" },
+    { "src": "/api/admin/maquinas", "dest": "/admin-maquinas.js" },
+    { "src": "/api/admin/comandos", "dest": "/admin-comandos.js" },
+    { "src": "/api/tv/registrar", "dest": "/registrar-maquina.js" },
+    { "src": "/api/admin/aprovar-maquina", "dest": "/admin-aprovar-maquina.js" },
+    { "src": "/api/tv/comando-status", "dest": "/tv-comando-status.js" },
+    { "src": "/api/tv/eventos", "dest": "/tv-eventos.js" },
+    { "src": "/api/tv/config", "dest": "/tv-config.js" }
   ]
 }
