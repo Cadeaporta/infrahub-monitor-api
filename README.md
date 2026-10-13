@@ -8,6 +8,7 @@ API intermediária entre a extensão das TVs e o Supabase. A extensão nunca ace
 - SUPABASE_SERVICE_ROLE_KEY: chave secreta do Supabase. Nunca colocar no navegador ou na extensão.
 - ADMIN_SECRET: segredo administrativo longo e aleatório, usado apenas pelas rotas servidor-servidor.
 - TV_ENROLLMENT_SECRET: segredo de cadastro usado pelo helper local instalado via Atera. Não embutir na extensão.
+- CRON_SECRET: segredo para autenticar a tarefa diária de retenção de eventos.
 
 As rotas de lifecycle dependem da migration supabase/migrations/202610130001_tv_lifecycle_foundation.sql. Revise e aplique primeiro em ambiente de teste; esta PR não aplica SQL nem faz deploy.
 
@@ -34,7 +35,7 @@ Todas as rotas /api/admin/* exigem x-admin-secret e devem ser chamadas pelo back
 
 Novos dispositivos entram como pendente. O heartbeat, a consulta de comandos, os eventos e a configuração só são aceitos depois da aprovação. TVs antigas são marcadas como aprovadas pela migration para evitar interrupção imediata.
 
-Comandos sem confirmação expiram após 120 segundos e são marcados como falhos. A limpeza de eventos com mais de 14 dias deve ser configurada em etapa posterior, após validar a retenção e os backups.
+Comandos sem confirmação expiram após 120 segundos e são marcados como falhos. A rota /api/cron/limpar-eventos-tv remove eventos com mais de 14 dias e está agendada diariamente às 03:15 UTC. Configure CRON_SECRET na Vercel e confirme que o plano do projeto permite Cron Jobs antes de promover a alteração.
 
 ## Segurança e rollout
 
