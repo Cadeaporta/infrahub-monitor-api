@@ -8,19 +8,15 @@ function validUuid(value) {
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ erro: 'method not allowed' });
-  if (!process.env.TV_ENROLLMENT_SECRET ||
-      req.headers['x-enrollment-secret'] !== process.env.TV_ENROLLMENT_SECRET) {
-    return res.status(401).json({ erro: 'credencial de cadastro inválida' });
-  }
-
   const body = req.body || {};
+  const codigo_cadastro = String(body.codigo_cadastro || '').trim();
   const machine_uuid = String(body.machine_uuid || '').trim().toLowerCase();
   const hostname = String(body.hostname || '').trim().slice(0, 255);
   const nome = String(body.nome || hostname || 'TV pendente').trim().slice(0, 255);
   const url_esperada = typeof body.url_esperada === 'string' ? body.url_esperada.trim() : '';
 
-  if (!validUuid(machine_uuid) || !hostname) {
-    return res.status(400).json({ erro: 'machine_uuid UUID válido e hostname são obrigatórios' });
+  if (!validUuid(machine_uuid) || !hostname || !codigo_cadastro) {
+    return res.status(400).json({ erro: 'codigo_cadastro, machine_uuid UUID válido e hostname são obrigatórios' });
   }
   if (url_esperada) {
     try {
@@ -48,6 +44,24 @@ module.exports = async (req, res) => {
       status_aprovacao: existente.status_aprovacao
     });
   }
+
+  // Consume the enrollment code atomically: a code is single-use and expires.
+  const now = new Date().toISOString();
+  const { data: codigo, error: codigoError } = await supabaseAdmin
+    .from('tv_codigos_cadastro')
+    .update({ usado_em: now, usado_por_machine_uuid: machine_uuid })
+    .eq('codigo_hash', hashToken(codigo_cadastro))
+    .is('usado_em', null)
+    .is('revogado_em', null)
+    .gt('expira_em', now)
+    .select('id')
+    .maybeSingle();
+
+  if (codigoError) {
+    console.error('[InfraHub] falha ao validar código de cadastro:', codigoError);
+    return res.status(500).json({ erro: 'falha ao validar código de cadastro' });
+  }
+  if (!codigo) return res.status(401).json({ erro: 'código de cadastro inválido, expirado ou já utilizado' });
 
   const maquina_id = 'tv-' + machine_uuid.replace(/-/g, '').slice(0, 16);
   const token = crypto.randomBytes(32).toString('hex');
