@@ -78,6 +78,10 @@ update public.comandos
 set status = case when executado then 'concluido' else 'enviado' end
 where status is null;
 
+update public.comandos
+set prazo_em = coalesce(created_at, now()) + interval '2 minutes'
+where prazo_em is null;
+
 alter table public.comandos
   alter column status set default 'enviado',
   alter column status set not null;
@@ -110,13 +114,63 @@ create index if not exists tv_eventos_maquina_ocorrido_idx
 create index if not exists tv_eventos_ocorrido_idx
   on public.tv_eventos (ocorrido_em);
 
+-- Keep the status mirror in sync with lifecycle fields. Soft-deleted devices are
+-- removed from the live mirror, while their event/command history remains intact.
+create or replace function public.sync_maquinas_tv_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $function$
+begin
+  if TG_OP = 'DELETE' then
+    delete from public.maquinas_tv_status where id = OLD.id;
+    return OLD;
+  end if;
+
+  if NEW.deleted_at is not null then
+    delete from public.maquinas_tv_status where id = NEW.id;
+    return NEW;
+  end if;
+
+  insert into public.maquinas_tv_status (
+    id, nome, url_esperada, ultimo_heartbeat, url_atual, unidade, updated_at,
+    hostname, machine_uuid, status_aprovacao, aprovada_em, revogada_em,
+    configuracao, perfil_id, ultima_atividade, ultimo_erro, deleted_at
+  ) values (
+    NEW.id, NEW.nome, NEW.url_esperada, NEW.ultimo_heartbeat, NEW.url_atual,
+    NEW.unidade, NEW.updated_at, NEW.hostname, NEW.machine_uuid,
+    NEW.status_aprovacao, NEW.aprovada_em, NEW.revogada_em, NEW.configuracao,
+    NEW.perfil_id, NEW.ultima_atividade, NEW.ultimo_erro, NEW.deleted_at
+  )
+  on conflict (id) do update set
+    nome = EXCLUDED.nome,
+    url_esperada = EXCLUDED.url_esperada,
+    ultimo_heartbeat = EXCLUDED.ultimo_heartbeat,
+    url_atual = EXCLUDED.url_atual,
+    unidade = EXCLUDED.unidade,
+    updated_at = EXCLUDED.updated_at,
+    hostname = EXCLUDED.hostname,
+    machine_uuid = EXCLUDED.machine_uuid,
+    status_aprovacao = EXCLUDED.status_aprovacao,
+    aprovada_em = EXCLUDED.aprovada_em,
+    revogada_em = EXCLUDED.revogada_em,
+    configuracao = EXCLUDED.configuracao,
+    perfil_id = EXCLUDED.perfil_id,
+    ultima_atividade = EXCLUDED.ultima_atividade,
+    ultimo_erro = EXCLUDED.ultimo_erro,
+    deleted_at = EXCLUDED.deleted_at;
+
+  return NEW;
+end;
+$function$;
+
 -- Server/service-role only. Browser clients must go through authenticated API handlers.
 alter table public.tv_perfis_navegacao enable row level security;
 alter table public.tv_eventos enable row level security;
 
 -- Existing TVs retain approval and their current token. New registration handlers
 -- must explicitly create records with status_aprovacao='pendente'.
--- This migration does not execute retention deletion; schedule a controlled
--- cleanup job to remove tv_eventos older than 14 days after rollout.
+-- No rows are deleted by this migration. Retention cleanup is a later controlled step.
 
 commit;
