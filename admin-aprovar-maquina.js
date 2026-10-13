@@ -9,13 +9,14 @@ module.exports = async (req, res) => {
   const body = req.body || {};
   const id = String(body.id || '').trim();
   const action = String(body.action || '').trim();
+  const aprovada_por = typeof body.aprovada_por === 'string' ? body.aprovada_por : null;
   if (!id || !['aprovar', 'revogar'].includes(action)) {
     return res.status(400).json({ erro: 'id e action (aprovar|revogar) são obrigatórios' });
   }
 
   const now = new Date().toISOString();
   const updates = action === 'aprovar'
-    ? { status_aprovacao: 'aprovada', aprovada_em: now, revogada_em: null, deleted_at: null, updated_at: now }
+    ? { status_aprovacao: 'aprovada', aprovada_em: now, aprovada_por, revogada_em: null, deleted_at: null, updated_at: now }
     : { status_aprovacao: 'revogada', revogada_em: now, updated_at: now };
 
   const { data, error } = await supabaseAdmin
