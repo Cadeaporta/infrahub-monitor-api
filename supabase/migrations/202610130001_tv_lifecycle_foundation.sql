@@ -44,6 +44,22 @@ alter table public.maquinas_tv_status
   add column if not exists ultimo_erro text,
   add column if not exists deleted_at timestamptz;
 
+create table if not exists public.tv_codigos_cadastro (
+  id uuid primary key default gen_random_uuid(),
+  codigo_hash text not null unique,
+  criado_por uuid,
+  descricao text,
+  criado_em timestamptz not null default now(),
+  expira_em timestamptz not null,
+  usado_em timestamptz,
+  usado_por_machine_uuid uuid,
+  revogado_em timestamptz
+);
+create index if not exists tv_codigos_cadastro_expira_idx
+  on public.tv_codigos_cadastro (expira_em);
+create index if not exists tv_codigos_cadastro_usado_idx
+  on public.tv_codigos_cadastro (usado_em);
+
 create table if not exists public.tv_perfis_navegacao (
   id uuid primary key default gen_random_uuid(),
   nome text not null unique,
@@ -172,6 +188,7 @@ $function$;
 -- Server/service-role only. Browser clients must go through authenticated API handlers.
 alter table public.tv_perfis_navegacao enable row level security;
 alter table public.tv_eventos enable row level security;
+alter table public.tv_codigos_cadastro enable row level security;
 
 -- Existing TVs retain approval and their current token. New registration handlers
 -- must explicitly create records with status_aprovacao='pendente'.
