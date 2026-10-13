@@ -100,6 +100,7 @@ create table if not exists public.tv_eventos (
   maquina_id text not null,
   machine_uuid uuid,
   hostname text,
+  event_id text,
   tipo text not null,
   nivel text not null default 'info'
     check (nivel in ('debug', 'info', 'aviso', 'erro')),
@@ -109,6 +110,9 @@ create table if not exists public.tv_eventos (
   recebido_em timestamptz not null default now()
 );
 
+alter table public.tv_eventos add column if not exists event_id text;
+create unique index if not exists tv_eventos_machine_event_unique
+  on public.tv_eventos (maquina_id, event_id);
 create index if not exists tv_eventos_maquina_ocorrido_idx
   on public.tv_eventos (maquina_id, ocorrido_em desc);
 create index if not exists tv_eventos_ocorrido_idx
