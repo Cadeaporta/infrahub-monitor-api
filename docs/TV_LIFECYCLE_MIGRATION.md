@@ -27,6 +27,6 @@ This migration is intentionally additive and is **not applied automatically** to
 ## Follow-up work still required
 - Update the status mirror trigger to copy the added columns.
 - Change machine deletion to revocation/soft deletion and retain command/event history for at least 14 days.
-- Implement registration approval, per-device authentication, command acknowledgements/timeouts, event ingestion, and retention cleanup.
+- Registration approval, per-device authentication, command acknowledgements/timeouts, event ingestion, and a daily 14-day retention endpoint are implemented in the stacked API PR. Validate the scheduled job in a preview/development project before production.
 - Review the existing anonymous read policy on `maquinas_tv_status` carefully. Do not remove it until the public Plantão page has been verified to use a server-side read path, because Plantão must remain accessible without login.
 - Implement native Windows hostname discovery. A browser extension alone cannot reliably read the Windows hostname; use an Atera-installed local helper/native-messaging host instead of pretending otherwise.
