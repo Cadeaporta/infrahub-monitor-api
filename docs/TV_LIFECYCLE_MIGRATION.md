@@ -25,7 +25,7 @@ This migration is intentionally additive and is **not applied automatically** to
 5. Deploy the matching API lifecycle endpoints only after the migration has been applied.
 
 ## Follow-up work still required
-- The migration updates the status mirror trigger, and the API performs revocation/soft deletion while retaining command/event history.
-- Registration approval, single-use enrollment codes, per-device authentication, command acknowledgements/timeouts, event ingestion, navigation profiles, and a daily 14-day retention endpoint are implemented in the stacked API PR. Validate the scheduled job in a preview/development project before production.
+- The migration updates the status mirror trigger and preserves current approved devices for compatibility.
+- The dependent API PR implements registration approval, single-use enrollment codes, per-device authentication, command acknowledgements/timeouts, event ingestion, navigation profiles, and a daily 14-day retention endpoint. Review and deploy it only after this migration is validated.
 - Review the existing anonymous read policy on `maquinas_tv_status` carefully. Do not remove it until the public Plantão page has been verified to use a server-side read path, because Plantão must remain accessible without login.
-- Implement native Windows hostname discovery. A browser extension alone cannot reliably read the Windows hostname; use an Atera-installed local helper/native-messaging host. The dashboard now generates single-use enrollment codes, so no fleet-wide enrollment secret needs to be embedded in the extension.
+- Implement native Windows hostname discovery. A browser extension alone cannot reliably read the Windows hostname; use an Atera-installed local helper/native-messaging host. The dashboard generates single-use enrollment codes, so no fleet-wide enrollment secret needs to be embedded in the extension.
