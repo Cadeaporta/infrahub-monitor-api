@@ -50,7 +50,7 @@ create table if not exists public.tv_perfis_navegacao (
   descricao text,
   sites jsonb not null default '[]'::jsonb,
   intervalo_segundos integer not null default 30
-    check (intervalo_segundos between 5 and 3600),
+    check (intervalo_segundos between 30 and 3600),
   ativo boolean not null default true,
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
