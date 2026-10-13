@@ -9,7 +9,7 @@ This migration is intentionally additive and is **not applied automatically** to
 - Command lifecycle statuses: `enviado`, `recebido`, `executando`, `concluido`, `falhou`.
 - Event history independent of the machine row, so history can survive a TV being revoked or removed.
 - Indexes for machine status, command queues, and event history.
-- RLS enabled on the new profiles/events tables. The server uses the Supabase service role; browser clients must not access these tables directly.
+- RLS enabled on the new profiles, event, and single-use enrollment-code tables. The server uses the Supabase service role; browser clients must not access these tables directly.
 
 ## Compatibility choices
 - Existing TVs are marked `aprovada` by default, preserving current tokens and heartbeats.
@@ -25,8 +25,7 @@ This migration is intentionally additive and is **not applied automatically** to
 5. Deploy the matching API lifecycle endpoints only after the migration has been applied.
 
 ## Follow-up work still required
-- Update the status mirror trigger to copy the added columns.
-- Change machine deletion to revocation/soft deletion and retain command/event history for at least 14 days.
-- Implement registration approval, per-device authentication, command acknowledgements/timeouts, event ingestion, and retention cleanup.
+- The migration updates the status mirror trigger, and the API performs revocation/soft deletion while retaining command/event history.
+- Registration approval, single-use enrollment codes, per-device authentication, command acknowledgements/timeouts, event ingestion, navigation profiles, and a daily 14-day retention endpoint are implemented in the stacked API PR. Validate the scheduled job in a preview/development project before production.
 - Review the existing anonymous read policy on `maquinas_tv_status` carefully. Do not remove it until the public Plantão page has been verified to use a server-side read path, because Plantão must remain accessible without login.
-- Implement native Windows hostname discovery. A browser extension alone cannot reliably read the Windows hostname; use an Atera-installed local helper/native-messaging host instead of pretending otherwise.
+- Implement native Windows hostname discovery. A browser extension alone cannot reliably read the Windows hostname; use an Atera-installed local helper/native-messaging host. The dashboard now generates single-use enrollment codes, so no fleet-wide enrollment secret needs to be embedded in the extension.
