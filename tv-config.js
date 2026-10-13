@@ -3,7 +3,8 @@ const { validarMaquina } = require('./auth');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ erro: 'method not allowed' });
-  const maquina = await validarMaquina(supabaseAdmin, req.query?.maquina_id, req.query?.token);
+  const token = req.headers['x-tv-token'] || req.query?.token;
+  const maquina = await validarMaquina(supabaseAdmin, req.query?.maquina_id, token);
   if (!maquina) return res.status(401).json({ erro: 'token inválido ou máquina não aprovada' });
 
   const { data, error } = await supabaseAdmin
