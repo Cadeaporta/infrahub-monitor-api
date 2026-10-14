@@ -28,6 +28,44 @@
     {
       "src": "/api/admin/comandos",
       "dest": "/admin-comandos.js"
+    },
+    {
+      "src": "/api/admin/perfis",
+      "dest": "/admin-perfis.js"
+    },
+    {
+      "src": "/api/tv/registrar",
+      "dest": "/registrar-maquina.js"
+    },
+    {
+      "src": "/api/admin/aprovar-maquina",
+      "dest": "/admin-aprovar-maquina.js"
+    },
+    {
+      "src": "/api/tv/comando-status",
+      "dest": "/tv-comando-status.js"
+    },
+    {
+      "src": "/api/tv/eventos",
+      "dest": "/tv-eventos.js"
+    },
+    {
+      "src": "/api/tv/config",
+      "dest": "/tv-config.js"
+    },
+    {
+      "src": "/api/cron/limpar-eventos-tv",
+      "dest": "/limpar-eventos-tv.js"
+    },
+    {
+      "src": "/api/admin/codigos-cadastro",
+      "dest": "/admin-codigos-cadastro.js"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/limpar-eventos-tv",
+      "schedule": "15 3 * * *"
     }
   ]
 }
